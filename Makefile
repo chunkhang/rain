@@ -1,6 +1,6 @@
 all: rain
 
-rain: main.go
+rain: *.go
 	go build -o $@
 
 .PHONY: all
