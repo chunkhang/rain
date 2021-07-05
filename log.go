@@ -5,11 +5,11 @@ import (
 	"os"
 )
 
-// Logging is a module to handle logging
-type Logging struct{}
-
 // Filename is the log filename
 const Filename = "rain.log"
+
+// Logging is a module to handle logging
+type Logging struct{}
 
 var logging Logging
 var file *os.File
