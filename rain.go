@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/tncardoso/gocurses"
 )
 
@@ -8,31 +10,44 @@ import (
 // Higher density creates more raindrops in total
 const DropDensity = 10
 
+// RainFallDelay is the delay between rain falls in milliseconds
+const RainFallDelay = 20
+
 // Rain holds the state of all raindrops
 type Rain struct {
 	drops []*RainDrop
+	stop  bool
 }
 
-func NewRain() *Rain {
-	rain := &Rain{}
-
-	rain.drops = make([]*RainDrop, DropDensity*term.w)
-	for i := range rain.drops {
+// Setup performs the setup for rainfall
+func (r *Rain) Setup() {
+	r.drops = make([]*RainDrop, DropDensity*term.w)
+	for i := range r.drops {
 		drop := &RainDrop{char: '|'}
 		drop.Reset()
-		rain.drops[i] = drop
+		r.drops[i] = drop
 	}
-
-	return rain
 }
 
-func (r *Rain) Fall() {
-	gocurses.Clear()
-	for _, drop := range r.drops {
-		drop.Fall()
-		gocurses.Mvaddch(drop.y, drop.x, drop.char)
+// Start starts the rainfall
+func (r *Rain) Start() {
+	for {
+		if r.stop {
+			return
+		}
+		gocurses.Clear()
+		for _, drop := range r.drops {
+			drop.Fall()
+			gocurses.Mvaddch(drop.y, drop.x, drop.char)
+		}
+		gocurses.Refresh()
+		time.Sleep(time.Duration(RainFallDelay) * time.Millisecond)
 	}
-	gocurses.Refresh()
+}
+
+// Stop stops the rainfall
+func (r *Rain) Stop() {
+	r.stop = true
 }
 
 // RainDrop holds the state of a single raindrop
