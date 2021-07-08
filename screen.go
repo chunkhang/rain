@@ -25,6 +25,13 @@ func (s *Screen) Setup() {
 	gocurses.CursSet(0)
 
 	s.h, s.w = gocurses.Getmaxyx()
+
+	// Endlessly wait for input, so keypresses do not affect the screen
+	go func() {
+		for {
+			gocurses.Stdscr.Getch()
+		}
+	}()
 }
 
 // AddChar adds a character to the screen buffer
