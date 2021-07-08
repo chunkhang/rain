@@ -1,8 +1,10 @@
 # Rain
 
+> Terminal rain
+
 ## Building
 
-To make rain:
+Make sure you have Go 1.15 installed before making rain:
 
 ```
 make
