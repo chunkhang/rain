@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 	"os/signal"
@@ -10,20 +11,24 @@ import (
 	"github.com/tncardoso/gocurses"
 )
 
-// RainFallDelay is the delay between rainfall ticks in milliseconds
-const RainFallDelay = 20
+var debugMode = flag.Bool("debug", false, "enable debug logs")
+var debugFilename = flag.String("logfile", "rain.log", "filename for debug logs to output to")
+var rainfallDelay = flag.Int("delay", 20, "delay between rainfall ticks")
+var rainDensity = flag.Float64("density", 0.1, "density of raindrops")
 
 // RainEngine is the engine that controls rain animation
 type RainEngine struct {
-	stopping chan bool
-	stopped  chan bool
+	tickDelay int
+	stopping  chan bool
+	stopped   chan bool
 }
 
 // NewRainEngine creates a new RainEngine
-func NewRainEngine() *RainEngine {
+func NewRainEngine(tickDelay int) *RainEngine {
 	engine := &RainEngine{
-		stopping: make(chan bool),
-		stopped:  make(chan bool),
+		tickDelay: tickDelay,
+		stopping:  make(chan bool),
+		stopped:   make(chan bool),
 	}
 	return engine
 }
@@ -34,7 +39,7 @@ func (e *RainEngine) Start() {
 	log.Printf("rain engine starting...")
 
 	// Create new rain based on terminal size
-	rain := NewRain(term.w, term.h)
+	rain := NewRain(term.w, term.h, *rainDensity)
 
 	go func() {
 		for {
@@ -56,7 +61,7 @@ func (e *RainEngine) Start() {
 				e.stopped <- true
 				return
 			// Otherwise, wait a bit before the next tick
-			case <-time.After(time.Duration(RainFallDelay) * time.Millisecond):
+			case <-time.After(time.Duration(e.tickDelay) * time.Millisecond):
 				continue
 			}
 		}
@@ -72,14 +77,19 @@ func (e *RainEngine) Stop() {
 	log.Printf("rain engine stopped...")
 }
 
+func init() {
+	flag.Parse()
+}
+
 func main() {
+	logging := &Logging{enabled: *debugMode, filename: *debugFilename}
 	logging.Setup()
 	defer logging.Teardown()
 
 	curses.Setup()
 	defer curses.Teardown()
 
-	engine := NewRainEngine()
+	engine := NewRainEngine(*rainfallDelay)
 	engine.Start()
 
 	quitting := make(chan bool)

@@ -4,11 +4,6 @@ import (
 	"log"
 )
 
-// RainDropDensity detemines number of raindrops created for a rain
-// For a rain with 50w and 20h, the area is 50 * 20 = 1000
-// Density of 0.5 means 0.5 * 1000 = 500 raindrops
-const RainDropDensity float32 = 0.1
-
 // RainDrop holds the state of a single raindrop
 type RainDrop struct {
 	char rune
@@ -17,22 +12,26 @@ type RainDrop struct {
 }
 
 // Rain holds the state of all raindrops
+// Density detemines number of raindrops created for a rain
+// For a rain with 50w and 20h, the area is 50 * 20 = 1000
+// Density of 0.5 means 0.5 * 1000 = 500 raindrops
 type Rain struct {
-	drops []*RainDrop
-	w     int
-	h     int
+	w       int
+	h       int
+	density float64
+	drops   []*RainDrop
 }
 
 // NewRain creates a new rain
-func NewRain(w, h int) *Rain {
+func NewRain(w, h int, density float64) *Rain {
 	log.Printf("create new rain...")
 
 	// Create rain
-	rain := &Rain{w: w, h: h}
+	rain := &Rain{w: w, h: h, density: density}
 
 	// Create raindrops
 	area := rain.w * rain.h
-	totalDrops := int(RainDropDensity * float32(area))
+	totalDrops := int(rain.density * float64(area))
 	drops := make([]*RainDrop, totalDrops)
 	for i := range drops {
 		drop := &RainDrop{
