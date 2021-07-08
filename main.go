@@ -84,6 +84,12 @@ func main() {
 	logger.Setup()
 	defer logger.Teardown()
 
+	// Print flag values
+	log.Printf("print flags...")
+	flag.VisitAll(func(f *flag.Flag) {
+		log.Printf("%s = %s", f.Name, f.Value)
+	})
+
 	screen.Setup()
 	defer screen.Teardown()
 
