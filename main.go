@@ -7,8 +7,6 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-
-	"github.com/tncardoso/gocurses"
 )
 
 var debugMode = flag.Bool("debug", false, "enable debug logs")
@@ -38,17 +36,17 @@ func NewRainEngine(tickDelay int) *RainEngine {
 func (e *RainEngine) Start() {
 	log.Printf("rain engine starting...")
 
-	// Create new rain based on terminal size
-	rain := NewRain(term.w, term.h, *rainDensity)
+	// Create new rain based on screen size
+	rain := NewRain(screen.w, screen.h, *rainDensity)
 
 	go func() {
 		for {
 			// Draw current state of rain
-			gocurses.Clear()
+			screen.Clear()
 			for _, drop := range rain.drops {
-				gocurses.Mvaddch(drop.y, drop.x, drop.char)
+				screen.AddChar(drop.char, drop.x, drop.y)
 			}
-			gocurses.Refresh()
+			screen.Flush()
 
 			// Update state of rain
 			rain.Fall()
@@ -56,8 +54,8 @@ func (e *RainEngine) Start() {
 			select {
 			// Time to stop, so clear the screen and we are done
 			case <-e.stopping:
-				gocurses.Clear()
-				gocurses.Refresh()
+				screen.Clear()
+				screen.Flush()
 				e.stopped <- true
 				return
 			// Otherwise, wait a bit before the next tick
@@ -82,12 +80,12 @@ func init() {
 }
 
 func main() {
-	logging := &Logging{enabled: *debugMode, filename: *debugFilename}
-	logging.Setup()
-	defer logging.Teardown()
+	logger := &Logger{enabled: *debugMode, filename: *debugFilename}
+	logger.Setup()
+	defer logger.Teardown()
 
-	curses.Setup()
-	defer curses.Teardown()
+	screen.Setup()
+	defer screen.Teardown()
 
 	engine := NewRainEngine(*rainfallDelay)
 	engine.Start()
@@ -105,7 +103,7 @@ func main() {
 			// Handle terminal resize
 			case syscall.SIGWINCH:
 				engine.Stop()
-				curses.Resize()
+				screen.Resize()
 				engine.Start()
 			// Handle interruption / termination
 			case syscall.SIGINT, syscall.SIGTERM:

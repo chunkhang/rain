@@ -6,16 +6,16 @@ import (
 	"os"
 )
 
-// Logging is a module to handle logging
-type Logging struct {
+// Logger represents the application logger
+type Logger struct {
 	enabled  bool
 	filename string
 	file     *os.File
 }
 
-// Setup performs setup for logging
+// Setup performs setup for logger
 // Debug mode determines whether we are logging to a file
-func (l *Logging) Setup() {
+func (l *Logger) Setup() {
 	if l.enabled {
 		file, err := os.OpenFile(l.filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
@@ -28,8 +28,8 @@ func (l *Logging) Setup() {
 	}
 }
 
-// Teardown performs teardown for logging
-func (l *Logging) Teardown() {
+// Teardown performs teardown for logger
+func (l *Logger) Teardown() {
 	if l.enabled {
 		l.file.Close()
 	}
