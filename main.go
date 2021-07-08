@@ -12,7 +12,7 @@ import (
 var debugMode = flag.Bool("debug", false, "enable debug logs")
 var debugFilename = flag.String("logfile", "rain.log", "filename for debug logs to output to")
 var rainfallDelay = flag.Int("delay", 20, "delay between rainfall ticks")
-var rainDensity = flag.Float64("density", 0.1, "density of raindrops")
+var rainDensity = flag.Float64("density", 0.2, "density of raindrops")
 
 // RainEngine is the engine that controls rain animation
 type RainEngine struct {
