@@ -24,7 +24,7 @@ type Rain struct {
 
 // NewRain creates a new rain
 func NewRain(w, h int, density float64) *Rain {
-	log.Printf("create new rain...")
+	log.Println("create new rain...")
 
 	// Create rain
 	rain := &Rain{w: w, h: h, density: density}
@@ -34,8 +34,19 @@ func NewRain(w, h int, density float64) *Rain {
 	totalDrops := int(rain.density * float64(area))
 	drops := make([]*RainDrop, totalDrops)
 	for i := range drops {
+		// We want more heavy drops than light drops
+		// To create the illusion of depth
+		var char rune
+		switch RandInt(0, 5) {
+		case 0, 1, 2:
+			char = '|'
+		case 3, 4:
+			char = ':'
+		case 5:
+			char = '.'
+		}
 		drop := &RainDrop{
-			char: '|',
+			char: char,
 			x:    RandInt(0, rain.w-1),
 			y:    RandInt(-rain.h, -1),
 		}

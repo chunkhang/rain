@@ -16,7 +16,7 @@ var screen Screen
 
 // Setup performs setup for screen
 func (s *Screen) Setup() {
-	log.Printf("setup screen...")
+	log.Println("setup screen...")
 
 	gocurses.Initscr()
 
@@ -51,7 +51,7 @@ func (s *Screen) Flush() {
 
 // Resize updates the screen size to the latest
 func (s *Screen) Resize() {
-	log.Printf("resize screen...")
+	log.Println("resize screen...")
 
 	gocurses.End()
 	gocurses.Refresh()
@@ -61,7 +61,7 @@ func (s *Screen) Resize() {
 
 // Teardown performs teardown for screen
 func (s *Screen) Teardown() {
-	log.Printf("teardown screen...")
+	log.Println("teardown screen...")
 
 	gocurses.End()
 }
