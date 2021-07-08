@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,23 +13,31 @@ import (
 // RainFallDelay is the delay between rainfall ticks in milliseconds
 const RainFallDelay = 20
 
-func animate(rain *Rain, stop chan bool) {
-	for {
-		// Update state of rain
-		rain.Fall()
+func startRaining(stopping, stopped chan bool) {
+	log.Printf("animate rain starting...")
 
-		// Draw the new state of rain
+	// Create new rain
+	rain := NewRain(term.w, term.h)
+
+	for {
+		// Draw current state of rain
 		gocurses.Clear()
 		for _, drop := range rain.drops {
 			gocurses.Mvaddch(drop.y, drop.x, drop.char)
 		}
 		gocurses.Refresh()
 
+		// Update state of rain
+		rain.Fall()
+
 		select {
 		// Time to stop, so clear the screen and we are done
-		case <-stop:
+		case <-stopping:
+			log.Printf("animate rain stopping...")
 			gocurses.Clear()
 			gocurses.Refresh()
+			stopped <- true
+			log.Printf("animate rain stopped...")
 			return
 		// Otherwise, wait a bit before the next tick
 		case <-time.After(time.Duration(RainFallDelay) * time.Millisecond):
@@ -44,34 +53,34 @@ func main() {
 	curses.Setup()
 	defer curses.Teardown()
 
-	stop := make(chan bool)
-	quit := make(chan bool)
+	stopping := make(chan bool)
+	stopped := make(chan bool)
+	quitting := make(chan bool)
 
-	rain := NewRain(term.w, term.h)
-	go animate(rain, stop)
+	go startRaining(stopping, stopped)
 
 	s := make(chan os.Signal, 1)
 	signal.Notify(s, syscall.SIGWINCH, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		for {
 			sig := <-s
-			if sig == syscall.SIGWINCH {
-				// Handle terminal resize
-				stop <- true
-				close(stop)
-				// rain.Stop()
-				// curses.Resize()
-				// rain.Setup()
-				// go rain.Start()
-			} else {
-				// Handle interruption / termination
-				stop <- true
-				close(stop)
-				quit <- true
-				return
+			log.Println("receive signal...")
+			log.Printf("signal = %s", sig)
+			switch sig {
+			// Handle terminal resize
+			case syscall.SIGWINCH:
+				stopping <- true
+				<-stopped
+				curses.Resize()
+				go startRaining(stopping, stopped)
+			// Handle interruption / termination
+			case syscall.SIGINT, syscall.SIGTERM:
+				stopping <- true
+				<-stopped
+				quitting <- true
 			}
 		}
 	}()
 
-	<-quit
+	<-quitting
 }

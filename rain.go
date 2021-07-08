@@ -1,5 +1,9 @@
 package main
 
+import (
+	"log"
+)
+
 // RainDropDensity detemines number of raindrops created for a rain
 // For a rain with 50w and 20h, the area is 50 * 20 = 1000
 // Density of 0.5 means 0.5 * 1000 = 500 raindrops
@@ -20,7 +24,9 @@ type Rain struct {
 }
 
 // NewRain creates a new rain
-func NewRain(w int, h int) *Rain {
+func NewRain(w, h int) *Rain {
+	log.Printf("create new rain...")
+
 	// Create rain
 	rain := &Rain{w: w, h: h}
 
@@ -37,6 +43,8 @@ func NewRain(w int, h int) *Rain {
 		drops[i] = drop
 	}
 	rain.drops = drops
+
+	log.Printf("rain = {drops:[%d], w:%d, h:%d}", len(rain.drops), rain.w, rain.h)
 
 	return rain
 }
