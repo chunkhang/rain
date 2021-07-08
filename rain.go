@@ -1,75 +1,55 @@
 package main
 
-import (
-	"time"
+// RainDropDensity detemines number of raindrops created for a rain
+// For a rain with 50w and 20h, the area is 50 * 20 = 1000
+// Density of 0.5 means 0.5 * 1000 = 500 raindrops
+const RainDropDensity float32 = 0.1
 
-	"github.com/tncardoso/gocurses"
-)
-
-// DropDensity detemines density of raindrops
-// Higher density creates more raindrops in total
-const DropDensity = 10
-
-// RainFallDelay is the delay between rain falls in milliseconds
-const RainFallDelay = 20
+// RainDrop holds the state of a single raindrop
+type RainDrop struct {
+	char rune
+	x    int
+	y    int
+}
 
 // Rain holds the state of all raindrops
 type Rain struct {
 	drops []*RainDrop
-	stop  bool
+	w     int
+	h     int
 }
 
-// Setup performs the setup for rainfall
-func (r *Rain) Setup() {
-	r.drops = make([]*RainDrop, DropDensity*term.w)
-	for i := range r.drops {
-		drop := &RainDrop{char: '|'}
-		drop.Reset()
-		r.drops[i] = drop
-	}
-}
+// NewRain creates a new rain
+func NewRain(w int, h int) *Rain {
+	// Create rain
+	rain := &Rain{w: w, h: h}
 
-// Start starts the rainfall
-func (r *Rain) Start() {
-	for {
-		if r.stop {
-			return
+	// Create raindrops
+	area := rain.w * rain.h
+	totalDrops := int(RainDropDensity * float32(area))
+	drops := make([]*RainDrop, totalDrops)
+	for i := range drops {
+		drop := &RainDrop{
+			char: '|',
+			x:    RandInt(0, rain.w-1),
+			y:    RandInt(-rain.h, -1),
 		}
-		gocurses.Clear()
-		for _, drop := range r.drops {
-			drop.Fall()
-			gocurses.Mvaddch(drop.y, drop.x, drop.char)
-		}
-		gocurses.Refresh()
-		time.Sleep(time.Duration(RainFallDelay) * time.Millisecond)
+		drops[i] = drop
 	}
+	rain.drops = drops
+
+	return rain
 }
 
-// Stop stops the rainfall
-func (r *Rain) Stop() {
-	r.stop = true
-}
-
-// RainDrop holds the state of a single raindrop
-type RainDrop struct {
-	x    int
-	y    int
-	char rune
-}
-
-// Reset positions the raindrop in a random spot in the sky out of view
-func (r *RainDrop) Reset() {
-	r.x = RandInt(0, term.w-1)
-	r.y = RandInt(-term.h, -1)
-}
-
-// Fall updates the raindrop after it falls
-// If the raindrop has reached the ground, it is reset
-func (r *RainDrop) Fall() {
-	if r.y+1 < term.h {
-		r.y++
-	} else {
-		r.Reset()
-		r.y = 0
+// Fall updates the state of rainfall by one tick
+func (r *Rain) Fall() {
+	for _, drop := range r.drops {
+		if drop.y+1 < r.h {
+			drop.y++
+		} else {
+			// If a raindrop has reached the ground, reset its position
+			drop.x = RandInt(0, r.w-1)
+			drop.y = 0
+		}
 	}
 }
