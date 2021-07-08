@@ -13,37 +13,63 @@ import (
 // RainFallDelay is the delay between rainfall ticks in milliseconds
 const RainFallDelay = 20
 
-func startRaining(stopping, stopped chan bool) {
-	log.Printf("animate rain starting...")
+// RainEngine is the engine that controls rain animation
+type RainEngine struct {
+	stopping chan bool
+	stopped  chan bool
+}
 
-	// Create new rain
+// NewRainEngine creates a new RainEngine
+func NewRainEngine() *RainEngine {
+	engine := &RainEngine{
+		stopping: make(chan bool),
+		stopped:  make(chan bool),
+	}
+	return engine
+}
+
+// Start starts the rain animation
+// A new rain is created before animation begins
+func (e *RainEngine) Start() {
+	log.Printf("rain engine starting...")
+
+	// Create new rain based on terminal size
 	rain := NewRain(term.w, term.h)
 
-	for {
-		// Draw current state of rain
-		gocurses.Clear()
-		for _, drop := range rain.drops {
-			gocurses.Mvaddch(drop.y, drop.x, drop.char)
-		}
-		gocurses.Refresh()
-
-		// Update state of rain
-		rain.Fall()
-
-		select {
-		// Time to stop, so clear the screen and we are done
-		case <-stopping:
-			log.Printf("animate rain stopping...")
+	go func() {
+		for {
+			// Draw current state of rain
 			gocurses.Clear()
+			for _, drop := range rain.drops {
+				gocurses.Mvaddch(drop.y, drop.x, drop.char)
+			}
 			gocurses.Refresh()
-			stopped <- true
-			log.Printf("animate rain stopped...")
-			return
-		// Otherwise, wait a bit before the next tick
-		case <-time.After(time.Duration(RainFallDelay) * time.Millisecond):
-			continue
+
+			// Update state of rain
+			rain.Fall()
+
+			select {
+			// Time to stop, so clear the screen and we are done
+			case <-e.stopping:
+				gocurses.Clear()
+				gocurses.Refresh()
+				e.stopped <- true
+				return
+			// Otherwise, wait a bit before the next tick
+			case <-time.After(time.Duration(RainFallDelay) * time.Millisecond):
+				continue
+			}
 		}
-	}
+	}()
+}
+
+// Stop stops the rain animation
+// We wait until the animation has stopped completely
+func (e *RainEngine) Stop() {
+	log.Printf("rain engine stopping...")
+	e.stopping <- true
+	<-e.stopped
+	log.Printf("rain engine stopped...")
 }
 
 func main() {
@@ -53,11 +79,10 @@ func main() {
 	curses.Setup()
 	defer curses.Teardown()
 
-	stopping := make(chan bool)
-	stopped := make(chan bool)
-	quitting := make(chan bool)
+	engine := NewRainEngine()
+	engine.Start()
 
-	go startRaining(stopping, stopped)
+	quitting := make(chan bool)
 
 	s := make(chan os.Signal, 1)
 	signal.Notify(s, syscall.SIGWINCH, syscall.SIGINT, syscall.SIGTERM)
@@ -69,14 +94,12 @@ func main() {
 			switch sig {
 			// Handle terminal resize
 			case syscall.SIGWINCH:
-				stopping <- true
-				<-stopped
+				engine.Stop()
 				curses.Resize()
-				go startRaining(stopping, stopped)
+				engine.Start()
 			// Handle interruption / termination
 			case syscall.SIGINT, syscall.SIGTERM:
-				stopping <- true
-				<-stopped
+				engine.Stop()
 				quitting <- true
 			}
 		}
